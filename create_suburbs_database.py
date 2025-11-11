@@ -20,11 +20,11 @@ def _setup_gdf():
             urllib.request.urlretrieve(url, zip_path)
         print("Extracting ZIP...")
         with zipfile.ZipFile(zip_path, "r") as zf:
-            zf.extractall(".")
+            zf.extractall(f"./{out_dir}")
     else:
         print("Shapefile directory already present; skipping download/extract.")
 
-    gdf = gpd.read_file("./SAL_2021_AUST_GDA2020_SHP/SAL_2021_AUST_GDA2020.shp")
+    gdf = gpd.read_file(f"./{out_dir}/SAL_2021_AUST_GDA2020.shp")
     # Re-project to a projected CRS to calculate distances in meters
     gdf = gdf.to_crs(epsg=7856)
 
@@ -36,7 +36,6 @@ def _calculate_distance(row, gdf):
 
 def create_suburbs_database():
     gdf = _setup_gdf()
-    print(gdf)
 
     con = sqlite3.connect("database.db")
     cur = con.cursor()

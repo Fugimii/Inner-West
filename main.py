@@ -13,7 +13,6 @@ class Suburb:
         self.shape = shape
     
     def to_dict(self):
-        print(self.center)
         return {
             "name": self.name,
             "center": self.center,
@@ -68,8 +67,6 @@ def get_shape(suburb_name):
             geojson = json.loads(row[0])
             return geojson
         except Exception as e:
-            print(row[0])
-            print(e)
             return jsonify({"error": "Invalid GeoJSON", "details": str(e)}), 500
     else:
         return jsonify({"error": "Suburb not found"}), 404
