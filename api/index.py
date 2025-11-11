@@ -59,7 +59,9 @@ def setup_database():
     client = Redis.from_url(os.environ.get('REDIS_URL'))
 
 def get_suburbs():
-    suburbs = pd.read_csv("./suburbs.csv")
+    # Use absolute path relative to this file's location
+    csv_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), "suburbs.csv")
+    suburbs = pd.read_csv(csv_path)
     suburbs["center"] = suburbs["center"].apply(json.loads)
     return suburbs
 
