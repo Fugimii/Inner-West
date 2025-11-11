@@ -1,7 +1,3 @@
-function capitalize(str) {
-    return str.split(' ').map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()).join(' ');
-}
-
 function load_map(element_id, coordinates, shape) {
     var map = L.map(element_id, {
         dragging: false,
@@ -26,8 +22,8 @@ function new_suburb_pair() {
     fetch("/get_suburb_pair")
         .then(response => response.json())
         .then(data => {
-            document.getElementById("suburb0").innerText = capitalize(data[0]["name"]);
-            document.getElementById("suburb1").innerText = capitalize(data[1]["name"]);
+            document.getElementById("suburb0").innerText = data[0]["name"];
+            document.getElementById("suburb1").innerText = data[1]["name"];
             
             document.getElementById("suburb0-map").outerHTML = '<div id="suburb0-map" class=map></div>';
             document.getElementById("suburb1-map").outerHTML = '<div id="suburb1-map" class=map></div>';
@@ -57,8 +53,8 @@ function vote(winner, loser) {
 
 document.querySelectorAll(".button-card").forEach((card, index) => {
     card.addEventListener("click", () => {
-        const suburb0 = document.getElementById("suburb0").innerText.toUpperCase();
-        const suburb1 = document.getElementById("suburb1").innerText.toUpperCase();
+        const suburb0 = document.getElementById("suburb0").innerText;
+        const suburb1 = document.getElementById("suburb1").innerText;
 
         if (index === 0) {
             vote(suburb0, suburb1);

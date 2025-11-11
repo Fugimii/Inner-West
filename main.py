@@ -6,6 +6,9 @@ from create_suburbs_database import create_suburbs_database
 
 app = Flask(__name__)
 
+suburbs = []
+suburb_names = []
+
 class Suburb:
     def __init__(self, name, center, shape):
         self.name = name
@@ -24,7 +27,6 @@ def get_connection():
     cur = con.cursor()
     return con, cur
 
-suburbs = []
 
 @app.route("/")
 def index():
@@ -45,7 +47,7 @@ def vote():
     if not winner or not loser:
         return jsonify({"error": "Both winner and loser are required"}), 400
     
-    if winner not in suburbs or loser not in suburbs:
+    if winner not in suburb_names or loser not in suburb_names:
         return jsonify({"error": "Invalid suburb"}), 400
     
     con, cur = get_connection()
@@ -94,4 +96,5 @@ def get_suburbs():
 if __name__ == "__main__":
     setup_database()
     suburbs = get_suburbs()
+    suburb_names = [suburb.name for suburb in suburbs]
     app.run(debug=True, port=8000)
