@@ -1,9 +1,9 @@
 # Takes in https://www.abs.gov.au/statistics/standards/australian-statistical-geography-standard-asgs-edition-3/jul2021-jun2026/access-and-downloads/digital-boundary-files
-# And converts it into SQL database of only the ones surrounding the Inner West
+# And converts it into a csv of only the ones surrounding the Inner West
 
 from shapely.geometry import mapping
 import geopandas as gpd
-import sqlite3
+import pandas as pd
 import json
 from pathlib import Path
 import zipfile
@@ -37,11 +37,7 @@ def _calculate_distance(row, gdf):
 def create_suburbs_database():
     gdf = _setup_gdf()
 
-    con = sqlite3.connect("/tmp/database.db")
-    cur = con.cursor()
-
-    cur.execute("DROP TABLE IF EXISTS suburbs")
-    cur.execute("CREATE TABLE suburbs (suburb TEXT, center TEXT, shape TEXT)")
+    df = pd.DataFrame(columns=["suburb", "center", "shape"])
 
     # Iterate through all suburbs and find those within 7.5km of Leichhardt
     for index, row in gdf.iterrows():
@@ -54,13 +50,9 @@ def create_suburbs_database():
             geo_geom = gpd.GeoSeries([row["geometry"]], crs=gdf.crs).to_crs(epsg=7844).iloc[0]
             center = json.dumps(mapping(geo_geom.centroid))
             shape = json.dumps(mapping(geo_geom))
-            cur.execute(
-                "INSERT OR IGNORE INTO suburbs (suburb, center, shape) VALUES (?, ?, ?)",
-                (suburb, center, shape)
-            )
+            df.loc[len(df)] = [suburb, center, shape]
     
-    con.commit()
-    con.close()
+    df.to_csv("./suburbs.csv", index=False)
 
 if __name__ == "__main__":
-    create_suburbs_database()    
+    create_suburbs_database()

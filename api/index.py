@@ -1,52 +1,26 @@
 from flask import Flask, jsonify, request
-import sqlite3
-import random
 import json
 import os
-import shutil
+import pandas as pd
+from redis import Redis
 
 app = Flask(__name__, static_folder='../public')
 
-suburbs = []
+suburbs = None
 suburb_names = []
-
-class Suburb:
-    def __init__(self, name, center, shape):
-        self.name = name
-        self.center = center
-        self.shape = shape
-    
-    def to_dict(self):
-        return {
-            "name": self.name,
-            "center": self.center,
-            "shape_url": f"/api/get_shape/{self.name}"
-        }
-
-def get_connection():
-    db_path = "/tmp/database.db"
-    # Copy the pre-built database if it doesn't exist in /tmp
-    if not os.path.exists(db_path):
-        source_db = os.path.join(os.path.dirname(__file__), '..', 'database.db')
-        if os.path.exists(source_db):
-            shutil.copy(source_db, db_path)
-    
-    con = sqlite3.connect(db_path)
-    cur = con.cursor()
-    return con, cur
-
+client = None
 
 @app.route("/")
 @app.route("/api")
 @app.route("/api/")
 def api_root():
-    return jsonify({"status": "ok", "message": "Inner West API"})
+    return jsonify({"status": "ok"})
 
 @app.route("/get_suburb_pair")
 @app.route("/api/get_suburb_pair")
 def get_suburb_pair():
-    pair = random.sample(suburbs, 2)
-    pair = [suburb.to_dict() for suburb in pair]
+    pair = suburbs.sample(2)
+    pair = pair.drop(columns=["shape"]).to_dict(orient="records")
     return jsonify(pair)
 
 @app.route("/vote", methods=["POST"])
@@ -62,25 +36,18 @@ def vote():
     if winner not in suburb_names or loser not in suburb_names:
         return jsonify({"error": "Invalid suburb"}), 400
     
-    con, cur = get_connection()
-    cur.execute("INSERT INTO votes (winner, loser) VALUES (?, ?)", (winner, loser))
-    con.commit()
-    con.close()
+    client.hincrby("votes", f"winner:{winner}:loser:{loser}", 1)
     return jsonify({"success": True, "winner": winner, "loser": loser})
 
 @app.route("/get_shape/<suburb_name>")
 @app.route("/api/get_shape/<suburb_name>")
 def get_shape(suburb_name):
     suburb_name = suburb_name.replace("%20", " ")
-    con, cur = get_connection()
-    cur.execute("SELECT shape FROM suburbs WHERE suburb = ?", (suburb_name,))
-    row = cur.fetchone()
-    con.close()
+    shape = suburbs[suburbs['suburb'] == suburb_name]["shape"]
     
-    if row:
-        # Parse the string to a Python dict, then jsonify
+    if shape is not None and not shape.empty:
         try:
-            geojson = json.loads(row[0])
+            geojson = json.loads(shape.iloc[0])
             return geojson
         except Exception as e:
             return jsonify({"error": "Invalid GeoJSON", "details": str(e)}), 500
@@ -88,24 +55,20 @@ def get_shape(suburb_name):
         return jsonify({"error": "Suburb not found"}), 404
 
 def setup_database():
-    con, cur = get_connection()
-    cur.execute("CREATE TABLE IF NOT EXISTS votes (winner TEXT, loser TEXT, timestamp DATETIME DEFAULT CURRENT_TIMESTAMP)")
-    con.commit()
-    con.close()
+    global client
+    client = Redis.from_url(os.environ.get('REDIS_URL'))
 
 def get_suburbs():
-    con, cur = get_connection()
-    cur.execute("SELECT suburb, center, shape FROM suburbs")
-    rows = cur.fetchall()
-    con.close()
-    return [Suburb(row[0], json.loads(row[1]), json.loads(row[2])) for row in rows]
+    suburbs = pd.read_csv("./suburbs.csv")
+    suburbs["center"] = suburbs["center"].apply(json.loads)
+    return suburbs
 
 def ensure_initialized():
     global suburbs, suburb_names
-    if not suburbs:
+    if suburbs is None or suburbs.empty:
         setup_database()
         suburbs = get_suburbs()
-        suburb_names = [suburb.name for suburb in suburbs]
+        suburb_names = suburbs['suburb'].tolist()
 
 # Initialize on module load
 ensure_initialized()

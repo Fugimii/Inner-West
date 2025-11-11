@@ -21,16 +21,18 @@ function new_suburb_pair() {
     fetch("/api/get_suburb_pair")
         .then(response => response.json())
         .then(data => {
-            document.getElementById("suburb0").innerText = data[0]["name"];
-            document.getElementById("suburb1").innerText = data[1]["name"];
+            document.getElementById("suburb0").innerText = data[0]["suburb"];
+            document.getElementById("suburb1").innerText = data[1]["suburb"];
             
             document.getElementById("suburb0-map").outerHTML = '<div id="suburb0-map" class=map></div>';
             document.getElementById("suburb1-map").outerHTML = '<div id="suburb1-map" class=map></div>';
 
             Promise.all([
-                fetch(data[0]["shape_url"]).then(res => res.json()),
-                fetch(data[1]["shape_url"]).then(res => res.json())
+                fetch("/api/get_shape/" + encodeURIComponent(data[0]["suburb"])).then(res => res.json()),
+                fetch("/api/get_shape/" + encodeURIComponent(data[1]["suburb"])).then(res => res.json())
             ]).then(shapes => {
+                console.log(data);
+
                 load_map("suburb0-map", [data[0]["center"]["coordinates"][1], data[0]["center"]["coordinates"][0]], shapes[0]);
                 load_map("suburb1-map", [data[1]["center"]["coordinates"][1], data[1]["center"]["coordinates"][0]], shapes[1]);
             });
