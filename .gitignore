@@ -1,0 +1,15 @@
+# Python-generated files
+__pycache__/
+*.py[oc]
+build/
+dist/
+wheels/
+*.egg-info
+
+# Virtual environments
+.venv
+
+# Datasets
+SAL_2021_AUST_GDA2020_SHP.zip
+SAL_2021_AUST_GDA2020_SHP/
+database.db
