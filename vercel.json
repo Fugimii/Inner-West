@@ -1,0 +1,26 @@
+{
+  "version": 2,
+  "functions": {
+    "api/index.py": {
+      "maxDuration": 30
+    }
+  },
+  "routes": [
+    {
+      "src": "/get_suburb_pair",
+      "dest": "/api/index.py"
+    },
+    {
+      "src": "/vote",
+      "dest": "/api/index.py"
+    },
+    {
+      "src": "/get_shape/(.*)",
+      "dest": "/api/index.py"
+    },
+    {
+      "src": "/(.*)",
+      "dest": "/$1"
+    }
+  ]
+}

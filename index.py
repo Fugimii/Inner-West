@@ -4,7 +4,7 @@ import random
 import json
 from create_suburbs_database import create_suburbs_database
 
-app = Flask(__name__)
+app = Flask(__name__, static_folder='public')
 
 suburbs = []
 suburb_names = []
@@ -23,7 +23,7 @@ class Suburb:
         }
 
 def get_connection():
-    con = sqlite3.connect("database.db")
+    con = sqlite3.connect("/tmp/database.db")
     cur = con.cursor()
     return con, cur
 
@@ -93,8 +93,6 @@ def get_suburbs():
     con.close()
     return [Suburb(row[0], json.loads(row[1]), json.loads(row[2])) for row in rows]
 
-if __name__ == "__main__":
-    setup_database()
-    suburbs = get_suburbs()
-    suburb_names = [suburb.name for suburb in suburbs]
-    app.run(debug=True, port=8000)
+setup_database()
+suburbs = get_suburbs()
+suburb_names = [suburb.name for suburb in suburbs]
