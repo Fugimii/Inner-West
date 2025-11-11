@@ -1,0 +1,20 @@
+# Shapefile directory (not needed in deployment)
+SAL_2021_AUST_GDA2020_SHP/
+*.zip
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+
+# Development files
+create_suburbs_database.py
+.git/
+.gitignore
+README.md
+
+# UV/uv lock files
+.venv/
+uv.lock

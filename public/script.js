@@ -11,7 +11,6 @@ function load_map(element_id, coordinates, shape) {
 
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
         maxZoom: 19,
-        attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
     }).addTo(map);
 
     // shape is already an object
@@ -19,7 +18,7 @@ function load_map(element_id, coordinates, shape) {
 }
 
 function new_suburb_pair() {
-    fetch("/get_suburb_pair")
+    fetch("/api/get_suburb_pair")
         .then(response => response.json())
         .then(data => {
             document.getElementById("suburb0").innerText = data[0]["name"];
@@ -32,7 +31,6 @@ function new_suburb_pair() {
                 fetch(data[0]["shape_url"]).then(res => res.json()),
                 fetch(data[1]["shape_url"]).then(res => res.json())
             ]).then(shapes => {
-                console.log(data[0]["center"]["coordinates"]);
                 load_map("suburb0-map", [data[0]["center"]["coordinates"][1], data[0]["center"]["coordinates"][0]], shapes[0]);
                 load_map("suburb1-map", [data[1]["center"]["coordinates"][1], data[1]["center"]["coordinates"][0]], shapes[1]);
             });
@@ -40,7 +38,7 @@ function new_suburb_pair() {
 }
 
 function vote(winner, loser) {
-    fetch("/vote", {
+    fetch("/api/vote", {
         method: "POST",
         headers: {
             "Content-Type": "application/json"
