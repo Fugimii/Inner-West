@@ -11,8 +11,8 @@ import urllib.request
 
 def _setup_gdf():
     url = "https://www.abs.gov.au/statistics/standards/australian-statistical-geography-standard-asgs-edition-3/jul2021-jun2026/access-and-downloads/digital-boundary-files/SAL_2021_AUST_GDA2020_SHP.zip"
-    zip_path = Path("/tmp/SAL_2021_AUST_GDA2020_SHP.zip")
-    out_dir = Path("/tmp/SAL_2021_AUST_GDA2020_SHP")
+    zip_path = Path("./SAL_2021_AUST_GDA2020_SHP.zip")
+    out_dir = Path("./SAL_2021_AUST_GDA2020_SHP")
 
     if not out_dir.exists():
         if not zip_path.exists():
@@ -20,11 +20,11 @@ def _setup_gdf():
             urllib.request.urlretrieve(url, zip_path)
         print("Extracting ZIP...")
         with zipfile.ZipFile(zip_path, "r") as zf:
-            zf.extractall("/tmp/")
+            zf.extractall(out_dir)
     else:
         print("Shapefile directory already present; skipping download/extract.")
 
-    gdf = gpd.read_file(f"/tmp/SAL_2021_AUST_GDA2020_SHP/SAL_2021_AUST_GDA2020.shp")
+    gdf = gpd.read_file(f"{out_dir}/SAL_2021_AUST_GDA2020.shp")
     # Re-project to a projected CRS to calculate distances in meters
     gdf = gdf.to_crs(epsg=7856)
 

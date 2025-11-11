@@ -13,3 +13,5 @@ wheels/
 SAL_2021_AUST_GDA2020_SHP.zip
 SAL_2021_AUST_GDA2020_SHP/
 database.db
+.vercel
+uv.lock

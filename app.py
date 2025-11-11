@@ -95,4 +95,4 @@ def get_suburbs():
 
 setup_database()
 suburbs = get_suburbs()
-suburb_names = [suburb.name for suburb in suburbs]
+suburb_names = [suburb.name for suburb in suburbs]  
