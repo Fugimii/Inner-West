@@ -6,9 +6,9 @@ readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
     "flask>=3.1.2",
-    "geopandas>=1.1.1",
     "openpyxl>=3.1.5",
-    "pandas>=2.3.3",
+    "polars>=1.35.2",
+    "redis>=7.0.1",
     "serverless-wsgi>=3.1.0",
     "shapely>=2.1.2",
 ]

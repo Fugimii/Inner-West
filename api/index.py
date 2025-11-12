@@ -1,7 +1,7 @@
 from flask import Flask, jsonify, request
 import json
 import os
-import pandas as pd
+import polars as pl
 from redis import Redis
 
 app = Flask(__name__, static_folder='../public')
@@ -10,9 +10,7 @@ suburbs = None
 suburb_names = []
 client = None
 
-@app.route("/")
 @app.route("/api")
-@app.route("/api/")
 def api_root():
     return jsonify({"status": "ok"})
 
@@ -20,7 +18,8 @@ def api_root():
 @app.route("/api/get_suburb_pair")
 def get_suburb_pair():
     pair = suburbs.sample(2)
-    pair = pair.drop(columns=["shape"]).to_dict(orient="records")
+    pair = pair.drop("shape").to_dicts()
+
     return jsonify(pair)
 
 @app.route("/vote", methods=["POST"])
@@ -43,11 +42,12 @@ def vote():
 @app.route("/api/get_shape/<suburb_name>")
 def get_shape(suburb_name):
     suburb_name = suburb_name.replace("%20", " ")
-    shape = suburbs[suburbs['suburb'] == suburb_name]["shape"]
+    shape = suburbs.filter(pl.col("suburb") == suburb_name)["shape"]
     
-    if shape is not None and not shape.empty:
+    if shape is not None:
         try:
-            geojson = json.loads(shape.iloc[0])
+            geojson = json.loads(shape[0])
+            geojson = geojson
             return geojson
         except Exception as e:
             return jsonify({"error": "Invalid GeoJSON", "details": str(e)}), 500
@@ -60,17 +60,19 @@ def setup_database():
 
 def get_suburbs():
     # Use absolute path relative to this file's location
-    csv_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), "suburbs.csv")
-    suburbs = pd.read_csv(csv_path)
-    suburbs["center"] = suburbs["center"].apply(json.loads)
+    csv_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), "./api/suburbs.csv")
+    suburbs = pl.read_csv(csv_path)
+    suburbs = suburbs.with_columns(
+        pl.col("center").map_elements(json.loads, return_dtype=pl.Object).alias("center")
+    )
     return suburbs
 
 def ensure_initialized():
     global suburbs, suburb_names
-    if suburbs is None or suburbs.empty:
+    if suburbs is None or suburbs.height == 0:
         setup_database()
         suburbs = get_suburbs()
-        suburb_names = suburbs['suburb'].tolist()
+        suburb_names = suburbs['suburb'].to_list()
 
 # Initialize on module load
 ensure_initialized()
