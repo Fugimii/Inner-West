@@ -89,9 +89,12 @@ a {
     }
 
     .button-card {
+        width: 90%;
+        max-width: none;
         min-width: none;
         margin: none;
-        padding: 40px 0px;
+        padding: 0px;
+        padding-bottom: 20px;
     }
 }
 
