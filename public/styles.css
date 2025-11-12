@@ -1,10 +1,12 @@
 @import url('https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,200..800&display=swap');
+@import url("https://www.nerdfonts.com/assets/css/webfont.css");
 
 :root {
     --base: #1e1e2e;
     --text: #cdd6f4;
     --surface0: #313244;
     --blue: #89b4fa;
+    --lavender: #b4befe;
 }
 
 body, html {
@@ -110,4 +112,19 @@ footer {
     border-radius: 12px;
     box-shadow: 0 2px 8px rgba(0,0,0,0.12);
     background: #222;
+}
+
+.github-logo {
+    position: absolute;
+    top: 16px;
+    right: 16px;
+    font-size: 24px;
+}
+
+.github-logo a {
+    text-decoration: none;
+    font-family: "NerdFontsSymbols Nerd Font";
+    color: var(--lavender);
+    font-weight: 1;
+    font-size: 32px;
 }
