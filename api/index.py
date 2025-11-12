@@ -74,6 +74,40 @@ def ensure_initialized():
         suburbs = get_suburbs()
         suburb_names = suburbs['suburb'].to_list()
 
+@app.route("/api/votes")
+def get_votes():
+    if client is None:
+        return jsonify({"error": "Redis client not initialized"}), 500
+    
+    try:
+        # Get all vote data from the hash
+        votes_data = client.hgetall("votes")
+        
+        votes = {k.decode('utf-8'): int(v) for k, v in votes_data.items()}
+        
+        # Aggregate votes by suburb (count wins for each suburb)
+        suburb_wins = {}
+        for key, count in votes.items():
+            # Parse the key format: "winner:SuburbName:loser:OtherSuburb"
+            parts = key.split(":")
+            if len(parts) >= 2:
+                winner = parts[1]
+                suburb_wins[winner] = suburb_wins.get(winner, 0) + count
+        
+        # Sort suburbs by number of wins
+        sorted_suburbs = sorted(suburb_wins.items(), key=lambda x: x[1], reverse=True)[:50]
+        top_suburbs = [{"suburb": suburb, "wins": wins} for suburb, wins in sorted_suburbs]
+        
+        total_votes = sum(votes.values())
+        
+        return jsonify({
+            "total_votes": total_votes,
+            "total_matchups": len(votes),
+            "top_50_suburbs": top_suburbs
+        })
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
 # Initialize on module load
 ensure_initialized()
 
