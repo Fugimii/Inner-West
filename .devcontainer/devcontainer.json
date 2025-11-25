@@ -1,0 +1,5 @@
+{
+  "name": "Python Project with uv",
+  "image": "mcr.microsoft.com/devcontainers/python:0-3.11",
+  "postCreateCommand": "curl -LsSf https://astral.sh/uv/install.sh | sh"
+}
