@@ -10,6 +10,26 @@ suburbs = None
 suburb_names = []
 client = None
 
+def _setup_database():
+    global client
+    client = Redis.from_url(os.environ.get('REDIS_URL'))
+
+def _get_suburbs():
+    # Use absolute path relative to this file's location
+    csv_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), "./api/suburbs.csv")
+    suburbs = pl.read_csv(csv_path)
+    suburbs = suburbs.with_columns(
+        pl.col("center").map_elements(json.loads, return_dtype=pl.Object).alias("center")
+    )
+    return suburbs
+
+def _ensure_initialized():
+    global suburbs, suburb_names
+    if suburbs is None or suburbs.height == 0:
+        _setup_database()
+        suburbs = _get_suburbs()
+        suburb_names = suburbs['suburb'].to_list()
+
 @app.route("/api")
 def api_root():
     return jsonify({"status": "ok"})
@@ -54,26 +74,6 @@ def get_shape(suburb_name):
     else:
         return jsonify({"error": "Suburb not found"}), 404
 
-def setup_database():
-    global client
-    client = Redis.from_url(os.environ.get('REDIS_URL'))
-
-def get_suburbs():
-    # Use absolute path relative to this file's location
-    csv_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), "./api/suburbs.csv")
-    suburbs = pl.read_csv(csv_path)
-    suburbs = suburbs.with_columns(
-        pl.col("center").map_elements(json.loads, return_dtype=pl.Object).alias("center")
-    )
-    return suburbs
-
-def ensure_initialized():
-    global suburbs, suburb_names
-    if suburbs is None or suburbs.height == 0:
-        setup_database()
-        suburbs = get_suburbs()
-        suburb_names = suburbs['suburb'].to_list()
-
 @app.route("/api/votes")
 def get_votes():
     if client is None:
@@ -109,11 +109,11 @@ def get_votes():
         return jsonify({"error": str(e)}), 500
 
 # Initialize on module load
-ensure_initialized()
+_ensure_initialized()
 
 @app.before_request
 def before_request():
-    ensure_initialized()
+    _ensure_initialized()
 
 # Export for Vercel
 app = app
