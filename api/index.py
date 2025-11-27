@@ -3,6 +3,7 @@ import json
 import os
 import polars as pl
 from redis import Redis
+from .bradley_terry import BradleyTerryModel
 
 app = Flask(__name__, static_folder='../public')
 
@@ -79,34 +80,30 @@ def get_votes():
     if client is None:
         return jsonify({"error": "Redis client not initialized"}), 500
     
-    try:
-        # Get all vote data from the hash
-        votes_data = client.hgetall("votes")
-        
-        votes = {k.decode('utf-8'): int(v) for k, v in votes_data.items()}
-        
-        # Aggregate votes by suburb (count wins for each suburb)
-        suburb_wins = {}
-        for key, count in votes.items():
-            # Parse the key format: "winner:SuburbName:loser:OtherSuburb"
-            parts = key.split(":")
-            if len(parts) >= 2:
-                winner = parts[1]
-                suburb_wins[winner] = suburb_wins.get(winner, 0) + count
-        
-        # Sort suburbs by number of wins
-        sorted_suburbs = sorted(suburb_wins.items(), key=lambda x: x[1], reverse=True)[:50]
-        top_suburbs = [{"suburb": suburb, "wins": wins} for suburb, wins in sorted_suburbs]
-        
-        total_votes = sum(votes.values())
-        
-        return jsonify({
-            "total_votes": total_votes,
-            "total_matchups": len(votes),
-            "top_50_suburbs": top_suburbs
-        })
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
+    # Check if cached strengths exist
+    cached_strengths = client.get("cached_strengths")
+    if cached_strengths:
+        return jsonify(json.loads(cached_strengths))
+    
+    votes_data = client.hgetall("votes")
+    votes = {k.decode('utf-8'): int(v) for k, v in votes_data.items()}
+    match_records = []
+    for key, count in votes.items():
+        parts = key.split(":")
+        winner = parts[1]
+        loser = parts[3]
+        for _ in range(count):
+            match_records.append({"winner": winner, "loser": loser})
+    matches_df = pl.DataFrame(match_records)
+    model = BradleyTerryModel(matches_df)
+    model.fit()
+    strengths_df = model.get_strengths()
+    strengths = strengths_df.to_dicts()
+    
+    # Cache the computed strengths
+    client.set("cached_strengths", json.dumps(strengths), ex=3600)  # Cache for 1 hour
+    
+    return jsonify(strengths)
 
 # Initialize on module load
 _ensure_initialized()
